@@ -1,12 +1,21 @@
 package repository
 
 import (
+	"chats/src/entity"
 	"context"
 	"fmt"
 	"log"
+	"os"
 
-	"../entity"
 	"cloud.google.com/go/firestore"
+	"google.golang.org/api/option"
+)
+
+
+const(
+	PROJECTID string="socialo-74856"
+	COLLECTIONNAME string= "donnchad-chats"
+	DOCNAME string = "chat"
 )
 type FireStoreRepo interface {
 	AddMessage(message *entity.Message, id string, cid string) (*entity.Message, error)
@@ -20,16 +29,10 @@ func NewFirestoreRepo() FireStoreRepo {
 	return &repo{}
 }
 
-const(
-	PROJECTID string="socialo-74856"
-	COLLECTIONNAME string= "donnchad-chats"
-	DOCNAME string = "chat"
-)
-
 func (*repo) AddMessage(message *entity.Message, id string, cid string) (*entity.Message, error){
 	ctx := context.Background()
-
-	client, err := firestore.NewClient(ctx,PROJECTID)
+	json := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
+	client, err := firestore.NewClient(ctx,PROJECTID,option.WithCredentialsFile(json))
 	if err != nil {
   		log.Fatalln("Failed to create a Firestore Client %v",err)
 		  return nil, err
@@ -55,17 +58,22 @@ func (*repo) AddMessage(message *entity.Message, id string, cid string) (*entity
 func (*repo) FetchChat(cid string)([]entity.Message, error){
 	ctx := context.Background()
 
-	client, err := firestore.NewClient(ctx,PROJECTID)
+	json := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
+	client, err := firestore.NewClient(ctx,PROJECTID,option.WithCredentialsFile(json))
+
 	if err != nil {
   		log.Fatalln("Failed to create a Firestore Client %v",err)
 		return nil, err
 	}
 	defer client.Close()
-
+	println(COLLECTIONNAME)
+	println(DOCNAME)
+	println(cid)
 	var chat []entity.Message
 	iterator := client.Collection(COLLECTIONNAME).Doc(DOCNAME).Collection(cid).Documents(ctx)
 	for {
         doc, err := iterator.Next()
+
         if err != nil {
             log.Fatalln("Failed to fetch message %v",err)
 			return nil, err
@@ -81,7 +89,9 @@ func (*repo) FetchChat(cid string)([]entity.Message, error){
 func (*repo) DeleteMessage(id string, cid string)([]entity.Message, error){
 	ctx := context.Background()
 
-	client, err := firestore.NewClient(ctx,PROJECTID)
+	json := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
+	client, err := firestore.NewClient(ctx,PROJECTID,option.WithCredentialsFile(json))
+
 	if err != nil {
   		log.Fatalln("Failed to create a Firestore Client %v",err)
 		return nil, err
